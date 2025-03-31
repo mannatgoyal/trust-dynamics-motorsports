@@ -9,4 +9,4 @@ This project simulates trust evolution in competitive motorsports using game the
 - Visualizations of trust dynamics over time
 
 ## License
-This project is licensed under the MIT License - see the (LICENSE) file for details.
+This project is licensed under the MIT License.
