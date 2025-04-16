@@ -80,7 +80,7 @@ F1 Race Strategy Optimizer is an interactive Streamlit dashboard combining game 
 - Game theory payoff matrix quantifies strategy outcomes.
 - Feature importance heatmap highlights critical race factors.
 - Driver recommendations tailor strategy to strengths and track.
-[Demo - Currently Deployed Results](https://trust-dynamics-motorsports-lp4lt5rzeuvryuqjedjd99.streamlit.app/)
+- [Demo - Currently Deployed Results](https://trust-dynamics-motorsports-lp4lt5rzeuvryuqjedjd99.streamlit.app/)
 ---
 
 ## Driver & Strategy Recommendations
