@@ -82,28 +82,38 @@ class GameTheoryStrategist:
 
 # ========== Data Loader ==========
 @st.cache_data
-def load_race_data(year, track, driver):
+def load_race_data(year, track, driver, csv_fallback="sample_race_data.csv"):
     try:
+        import fastf1
         session = fastf1.get_session(year, track, 'R')
         session.load()
         laps = session.laps.pick_driver(driver).copy()
-        
-        # Calculate Trust with robust error handling
         laps['LapTime'] = laps['LapTime'].dt.total_seconds()
         q1 = laps['LapTime'].quantile(0.25)
         if q1 == 0 or laps.empty:
             raise ValueError("Invalid lap time data")
-            
         laps['Trust'] = 1 - (laps['LapTime']/q1 - 1).abs()
         laps['Trust'] = laps['Trust'].replace([np.inf, -np.inf], np.nan)
         laps['Trust'] = laps['Trust'].ffill().bfill().clip(0, 1)
-        
         laps['Position'] = laps['Position'].astype(float).ffill().bfill()
-        
-        return laps[['LapNumber', 'LapTime', 'Position', 'Trust']].dropna()
+        laps = laps[['LapNumber', 'LapTime', 'Position', 'Trust']].dropna()
+        if laps.empty:
+            raise ValueError("No valid laps after cleaning.")
+        return laps.reset_index(drop=True)
     except Exception as e:
-        st.error(f"Data loading failed: {str(e)}")
-        return pd.DataFrame()
+        st.warning(f"FastF1 data unavailable or failed: {e}")
+        try:
+            st.info("Loading fallback CSV data...")
+            laps = pd.read_csv(csv_fallback)
+            # Ensure correct columns and types
+            laps['LapNumber'] = laps['LapNumber'].astype(int)
+            laps['LapTime'] = laps['LapTime'].astype(float)
+            laps['Position'] = laps['Position'].astype(float)
+            laps['Trust'] = laps['Trust'].astype(float)
+            return laps.dropna().reset_index(drop=True)
+        except Exception as e2:
+            st.error(f"CSV Fallback failed: {e2}")
+            return pd.DataFrame()
 
 # ========== AI Trust Model ==========
 class TrustAnalyzer:
