@@ -9,10 +9,13 @@ import matplotlib.gridspec as gridspec
 
 # ========== Configuration ==========
 AVAILABLE_RACES = [
-    (2022, "British Grand Prix", ["HAM", "VER"]),
-    (2022, "Abu Dhabi Grand Prix", ["VER", "LEC"]),
-    (2021, "Abu Dhabi Grand Prix", ["HAM", "VER"])
+    (2021, "Abu Dhabi Grand Prix", ["HAM", "VER"]),
+    (2020, "Abu Dhabi Grand Prix", ["HAM", "VER"]),
+    (2019, "Abu Dhabi Grand Prix", ["HAM", "VER"]),
+    (2021, "British Grand Prix", ["HAM", "VER"]),
+    (2020, "British Grand Prix", ["HAM", "VER"])
 ]
+
 
 TRACK_ALIASES = {
     "British Grand Prix": "Silverstone",
@@ -82,12 +85,12 @@ class GameTheoryStrategist:
 
 # ========== Data Loader ==========
 @st.cache_data
-def load_race_data(year, track, driver, csv_fallback="sample_race_data.csv"):
+def load_race_data(year, track, driver):
     try:
-        import fastf1
-        session = fastf1.get_session(year, track, 'R')
-        session.load()
-        laps = session.laps.pick_driver(driver).copy()
+        event = fastf1.get_event(year, track)
+        race = event.get_race()
+        race.load()
+        laps = race.laps.pick_driver(driver).copy()
         laps['LapTime'] = laps['LapTime'].dt.total_seconds()
         q1 = laps['LapTime'].quantile(0.25)
         if q1 == 0 or laps.empty:
@@ -101,19 +104,8 @@ def load_race_data(year, track, driver, csv_fallback="sample_race_data.csv"):
             raise ValueError("No valid laps after cleaning.")
         return laps.reset_index(drop=True)
     except Exception as e:
-        st.warning(f"FastF1 data unavailable or failed: {e}")
-        try:
-            st.info("Loading fallback CSV data...")
-            laps = pd.read_csv(csv_fallback)
-            # Ensure correct columns and types
-            laps['LapNumber'] = laps['LapNumber'].astype(int)
-            laps['LapTime'] = laps['LapTime'].astype(float)
-            laps['Position'] = laps['Position'].astype(float)
-            laps['Trust'] = laps['Trust'].astype(float)
-            return laps.dropna().reset_index(drop=True)
-        except Exception as e2:
-            st.error(f"CSV Fallback failed: {e2}")
-            return pd.DataFrame()
+        st.error(f"Data loading failed: {str(e)}")
+        return pd.DataFrame()
 
 # ========== AI Trust Model ==========
 class TrustAnalyzer:
